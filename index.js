@@ -137,7 +137,8 @@ const handlers = {
       this.event.session.attributes['visited'].push(room['$']['pid']);
     }
 
-    var cardTitle = firstSentence;
+    // var cardTitle = firstSentence;
+    var cardTitle = displayableText;
     var cardContent = (reprompt > '') ? reprompt : lastSentence;
     var imageObj = undefined;
 
@@ -154,9 +155,9 @@ const handlers = {
     if (linksRegex.exec(room['_'])) {
       // room has links leading out, so listen for further user input
       if(displayableText.startsWith('(')) {
-        reprompt = "one plus one equals two";
+        var listening = "one plus one equals two";
           this.response.speak(speechOutput)
-              .listen(reprompt)
+              .listen(listening)
               .cardRenderer(cardTitle, cardContent, imageObj);
       } else {
           this.response.speak(speechOutput)
@@ -174,7 +175,6 @@ const handlers = {
     this.emit(':responseReady');
   },
   'mathFact': function () {
-    console.log("mathFact");
     var slotValues = getSlotValues(this.event.request.intent.slots);
     followReadyLink(this.event, slotValues);
     this.emit('WhereAmI');
@@ -272,15 +272,14 @@ function currentRoom(event) {
 }
 
 function followReadyLink(event, slotValues) {
-  console.log(JSON.stringify(event));
-  console.log(JSON.stringify(slotValues));
+  var room = currentRoom(event);
+  console.log("followReadyLink stringified room: " + JSON.stringify(room));
   var addendOne = parseInt(slotValues['addendOne']['resolved']);
   var addendTwo = parseInt(slotValues['addendTwo']['resolved']);
   var userSum = parseInt(slotValues['sum']['resolved']);
   var target = "ready";
   var result = addendOne + addendTwo == userSum;
     if (result) {
-        console.log(`followLink: That would be ${target}`);
         for (var i = 0; i < $twine.length; i++) {
             if ($twine[i]['$']['name'].toLowerCase() === target.toLowerCase()) {
                 event.session.attributes['room'] = $twine[i]['$']['pid'];
