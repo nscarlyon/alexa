@@ -82,29 +82,21 @@ const handlers = {
     }
 
     var room = currentRoom(this.event);
-      console.log("this is the room: " + room);
+      console.log("currentRoom below");
       console.log(`WhereAmI: in ${JSON.stringify(room)}`);
 
     // get displayable text
     // e.g "You are here. [[Go South|The Hall]]" -> "You are here. Go South"
     var displayableText = room['_'];
-    console.log("This is displayable text: " + displayableText);
     linksRegex.lastIndex = 0;
     let m;
     while ((m = linksRegex.exec(displayableText)) !== null) {
-        console.log("This is m in while loop: " + m);
       displayableText = displayableText.replace(m[0], m[1]);
       linksRegex.lastIndex = 0;
     }
-      console.log("This is displayable text after while loop: " + displayableText);
       // strip html
-    displayableText = displayableText.replace(/<\/?[^>]+(>|$)/g, "");
-      console.log("This is displayable text after first replace: " + displayableText);
+      displayableText = displayableText.replace(/<\/?[^>]+(>|$)/g, "");
       displayableText = displayableText.replace("&amp;", "and");
-      console.log("This is displayable text after second replace: " + displayableText);
-      console.log("Does displayable text contain this? " + displayableText.startsWith("Encounter!"));
-
-      console.log("This is speech output before conatenation: " + speechOutput);
       speechOutput = speechOutput + displayableText;
       // create reprompt from links: "You can go north or go south"
     var reprompt = "";
@@ -113,7 +105,6 @@ const handlers = {
       var indexOfOpenParens = displayableText.indexOf('(');
       speechOutput = displayableText.substring(0, indexOfOpenParens);
       reprompt = "One plus one equals: ";
-      console.log("This is new displayable text inside if statement: " + displayableText);
     } else {
         while ((m = linksRegex.exec(room['_'])) !== null) {
             console.log("This is m inside while linksRegex loop: " + m);
@@ -185,12 +176,8 @@ const handlers = {
   'mathFact': function () {
     console.log("mathFact");
     var slotValues = getSlotValues(this.event.request.intent.slots);
-      console.log(slotValues);
-      console.log(slotValues['addend']);
-      console.log(slotValues['addend']['resolved']);
-      console.log(slotValues['sum']);
-    // followLink(this.event, [slotValues['addend']['resolved'], slotValues['addend']['synonym']]);
-    // this.emit('WhereAmI');
+    followReadyLink(this.event, slotValues);
+    this.emit('WhereAmI');
   },
   'Go': function() {
     console.log(`Go`);
@@ -282,6 +269,26 @@ function currentRoom(event) {
     }
   }
   return currentRoomData;
+}
+
+function followReadyLink(event, slotValues) {
+  console.log(JSON.stringify(event));
+  console.log(JSON.stringify(slotValues));
+  var addendOne = parseInt(slotValues['addendOne']['resolved']);
+  var addendTwo = parseInt(slotValues['addendTwo']['resolved']);
+  var userSum = parseInt(slotValues['sum']['resolved']);
+  var target = "ready";
+  var result = addendOne + addendTwo == userSum;
+    if (result) {
+        console.log(`followLink: That would be ${target}`);
+        for (var i = 0; i < $twine.length; i++) {
+            if ($twine[i]['$']['name'].toLowerCase() === target.toLowerCase()) {
+                event.session.attributes['room'] = $twine[i]['$']['pid'];
+                break;
+            }
+        }
+    }
+  return !result;
 }
 
 function followLink(event, direction_or_array) {
